@@ -10,9 +10,14 @@
 #   $ git ownership --since='1 month ago'
 #
 # (These are all standard arguments to `git log`.)
+#
+# Show respective ownership for all dirs in 'src' for a repo
+# $ find src -type d -depth 1 -exec git ownership {} \; -print | \
+#     grep -A 1 "(all)"
 
 import subprocess, re, sys
 
+# gather data from git-log
 regex = re.compile("^author_line(.*)$")
 
 try:
@@ -21,7 +26,6 @@ except subprocess.CalledProcessError as e:
     sys.stderr.write(e.output)
     sys.exit(e.returncode)
 
-# gather data from git-log
 i = 1
 edits = {}
 while i < len(lines):
@@ -61,7 +65,7 @@ for filepath, info in sorted(edits.items(), key=lambda i:len(i[1]['minors'])):
 
 # print ownership stats across all items if necessary
 if len(edits.items()) <= 1:
-    sys.exit(0) # no need for totals if only 1 item
+    sys.exit(0) 
 total_edits = 0
 max_ownership = 0
 majors = []
