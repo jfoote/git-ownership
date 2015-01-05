@@ -28,15 +28,26 @@ while i < len(lines):
         author = re.match(regex, lines[i-1]).groups()[0]
         i += 1
         while i < len(lines) and not re.match(regex, lines[i]):
-            filepath = lines[i]
-            edits[lines[i]] = edits.get(lines[i], {})
-            edits[lines[i]][author] = edits[lines[i]].get(author, 0) + 1
+            edits[lines[i]] = edits.get(lines[i], {'authors':{}, 'total_edits':0, 'majors':[], 'minors':[], 'ownership':0})
+            edits[lines[i]]['authors'][author] = edits[lines[i]]['authors'].get(author, 0) + 1
+            edits[lines[i]]['total_edits'] += 1
             i+=1
     else:
         i+=1
 
-for filepath, authors in sorted(edits.items()):
-    print filepath
-    authors = sorted(authors.items(), key=lambda i:i[1], reverse=True)
+for filepath, info in sorted(edits.items()):
+    #print filepath
+    authors = sorted(info['authors'].items(), key=lambda i:i[1], reverse=True) 
     for author, count in authors:
-        print "\t", author, count
+        if float(count) / info['total_edits'] >= 0.05:
+            info['majors'].append(author)
+            #print "\t", author, count, "(MAJOR:%d%%)" % (float(count) / info['total_edits'] * 100)
+        else:
+            info['minors'].append(author)
+            #print "\t", author, count, "(MINOR:%d%%)" % (float(count) / info['total_edits'] * 100)
+    info['ownership'] = max([float(info['authors'][a])/info['total_edits']*100 for a in info['majors']])
+    #print "MAJOR:%d MINOR:%d" % (len(info['majors']), len(info['minors']))
+
+print "ownership\tmajor\tminor\tfile"
+for filepath, info in sorted(edits.items(), key=lambda i:len(i[1]['minors'])):
+    print "%d\t%d\t%d\t%s" % (info['ownership'], len(info['majors']), len(info['minors']), filepath)
