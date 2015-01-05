@@ -21,6 +21,7 @@ except subprocess.CalledProcessError as e:
     sys.stderr.write(e.output)
     sys.exit(e.returncode)
 
+# gather data from git-log
 i = 1
 edits = {}
 while i < len(lines):
@@ -35,6 +36,7 @@ while i < len(lines):
     else:
         i+=1
 
+# calculate per-file ownership stats
 for filepath, info in sorted(edits.items()):
     #print filepath
     authors = sorted(info['authors'].items(), key=lambda i:i[1], reverse=True) 
@@ -48,6 +50,29 @@ for filepath, info in sorted(edits.items()):
     info['ownership'] = max([float(info['authors'][a])/info['total_edits']*100 for a in info['majors']])
     #print "MAJOR:%d MINOR:%d" % (len(info['majors']), len(info['minors']))
 
+# print per-file ownership stats
 print "ownership\tmajor\tminor\tfile"
 for filepath, info in sorted(edits.items(), key=lambda i:len(i[1]['minors'])):
     print "%d\t%d\t%d\t%s" % (info['ownership'], len(info['majors']), len(info['minors']), filepath)
+
+# print total ownership stats
+total_edits = 0
+max_ownership = 0
+majors = []
+minors = []
+commits = {}
+for filepath, info in edits.items():
+    total_edits += info['total_edits']
+    for author, count in info['authors'].items():
+        commits[author] = commits.get(author, 0) + count
+for author, count in commits.items():
+    ownership = float(count) / total_edits 
+    if ownership >= 0.05:
+        majors.append(author)
+    else:
+        minors.append(author)
+    if ownership > max_ownership:
+        max_ownership = ownership
+
+print "across all targets:"
+print "%d\t%d\t%d" % (max_ownership*100, len(majors), len(minors))
