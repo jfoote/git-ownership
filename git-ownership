@@ -40,22 +40,28 @@ while i < len(lines):
 for filepath, info in sorted(edits.items()):
     #print filepath
     authors = sorted(info['authors'].items(), key=lambda i:i[1], reverse=True) 
+    max_ownership = 0
     for author, count in authors:
-        if float(count) / info['total_edits'] >= 0.05:
+        ownership = float(count) / info['total_edits'] 
+        if ownership >= 0.05:
             info['majors'].append(author)
-            #print "\t", author, count, "(MAJOR:%d%%)" % (float(count) / info['total_edits'] * 100)
+            #print "\t", author, count, "(MAJOR:%d%%)" % (ownership * 100)
         else:
             info['minors'].append(author)
-            #print "\t", author, count, "(MINOR:%d%%)" % (float(count) / info['total_edits'] * 100)
-    info['ownership'] = max([float(info['authors'][a])/info['total_edits']*100 for a in info['majors']])
-    #print "MAJOR:%d MINOR:%d" % (len(info['majors']), len(info['minors']))
+            #print "\t", author, count, "(MINOR:%d%%)" % (ownership * 100)
+        if ownership > max_ownership:
+            max_ownership = ownership
+    info['ownership'] = max_ownership * 100
+    #print "\tMAJOR:%d MINOR:%d" % (len(info['majors']), len(info['minors']))
 
 # print per-file ownership stats
-print "ownership\tmajor\tminor\tfile"
+print "ownrshp\tmajor\tminor\tfile"
 for filepath, info in sorted(edits.items(), key=lambda i:len(i[1]['minors'])):
     print "%d\t%d\t%d\t%s" % (info['ownership'], len(info['majors']), len(info['minors']), filepath)
 
-# print total ownership stats
+# print ownership stats across all items if necessary
+if len(edits.items()) <= 1:
+    sys.exit(0) # no need for totals if only 1 item
 total_edits = 0
 max_ownership = 0
 majors = []
@@ -74,5 +80,6 @@ for author, count in commits.items():
     if ownership > max_ownership:
         max_ownership = ownership
 
-print "across all targets:"
-print "%d\t%d\t%d" % (max_ownership*100, len(majors), len(minors))
+print "-" * 8
+print "ownrshp\tmajor\tminor\tfile"
+print "%d\t%d\t%d\t(all)" % (max_ownership*100, len(majors), len(minors))
