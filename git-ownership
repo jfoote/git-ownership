@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+# 
+# Prints ownership metrics based on Christian Bird's 2011 paper for a git repo.
+# 
+# ----
+# Written by Jonathan Foote (jmfoote@loyola.edu)
+# - Stats from "Don't Touch My Code!" by Bird, et. al. (ACM ESEC/FSE 2011)
+# - Modeled loosely on 'git-churn' by Gary Bernhardt:
+#     https://github.com/garybernhardt/dotfiles)
+# ----
 #
 # Show ownership for whole repo:
 #   $ git ownership
@@ -9,19 +18,22 @@
 # Show ownership for a time range:
 #   $ git ownership --since='1 month ago'
 #
-# (These are all standard arguments to `git log`.)
+# (The above are all standard arguments to `git log`.)
 #
-# Show respective ownership for all dirs in 'src' for a repo
+# Hack: Show respective ownership for all dirs in 'src' for a repo
 # $ find src -type d -depth 1 -exec git ownership {} \; -print | \
 #     grep -A 1 "(all)"
 
 import subprocess, re, sys
 
-# gather data from git-log
+#
+# Gather data from git-log
+#
 regex = re.compile("^author_line(.*)$")
 
 try:
-    lines = subprocess.check_output(["git", "log", "--all", "-M", "-C", "--name-only", "--format=author_line%aN"] + sys.argv[1:]).splitlines()
+    lines = subprocess.check_output(["git", "log", "--all", "-M", "-C", 
+        "--name-only", "--format=author_line%aN"] + sys.argv[1:]).splitlines()
 except subprocess.CalledProcessError as e:
     sys.stderr.write(e.output)
     sys.exit(e.returncode)
@@ -40,7 +52,9 @@ while i < len(lines):
     else:
         i+=1
 
-# calculate per-file ownership stats
+#
+# Calculate per-file ownership stats
+#
 for filepath, info in sorted(edits.items()):
     #print filepath
     authors = sorted(info['authors'].items(), key=lambda i:i[1], reverse=True) 
@@ -58,12 +72,16 @@ for filepath, info in sorted(edits.items()):
     info['ownership'] = max_ownership * 100
     #print "\tMAJOR:%d MINOR:%d" % (len(info['majors']), len(info['minors']))
 
-# print per-file ownership stats
+#
+# Print per-file ownership stats
+#
 print "ownrshp\tmajor\tminor\tfile"
 for filepath, info in sorted(edits.items(), key=lambda i:len(i[1]['minors'])):
     print "%d\t%d\t%d\t%s" % (info['ownership'], len(info['majors']), len(info['minors']), filepath)
 
-# print ownership stats across all items if necessary
+#
+# Print ownership stats across all items if necessary
+#
 if len(edits.items()) <= 1:
     sys.exit(0) 
 total_edits = 0
@@ -79,6 +97,7 @@ for author, count in commits.items():
     ownership = float(count) / total_edits 
     if ownership >= 0.05:
         majors.append(author)
+        #print author, "(major %d%%)" % (ownership*100)
     else:
         minors.append(author)
     if ownership > max_ownership:
