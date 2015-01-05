@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+#
+# Show ownership for whole repo:
+#   $ git ownership
+#
+# Show ownership for specific directories:
+#   $ git ownership app lib
+#
+# Show ownership for a time range:
+#   $ git ownership --since='1 month ago'
+#
+# (These are all standard arguments to `git log`.)
+
+import subprocess, re, sys
+
+regex = re.compile("^author_line(.*)$")
+
+lines = subprocess.check_output(["git", "log", "--all", "-M", "-C", "--name-only", "--format=author_line%aN"] + sys.argv[1:]).splitlines()
+i = 1
+edits = {}
+while i < len(lines):
+    if not lines[i]: # delineates author from filename
+        author = re.match(regex, lines[i-1]).groups()[0]
+        i += 1
+        while i < len(lines) and not re.match(regex, lines[i]):
+            filepath = lines[i]
+            edits[lines[i]] = edits.get(lines[i], {})
+            edits[lines[i]][author] = edits[lines[i]].get(author, 0) + 1
+            i+=1
+    else:
+        i+=1
+
+for filepath, authors in sorted(edits.items()):
+    print filepath
+    authors = sorted(authors.items(), key=lambda i:i[1], reverse=True)
+    for author, count in authors:
+        print "\t", author, count
