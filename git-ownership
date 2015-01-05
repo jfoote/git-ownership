@@ -6,7 +6,7 @@
 # Written by Jonathan Foote (jmfoote@loyola.edu)
 # - Stats from "Don't Touch My Code!" by Bird, et. al. (ACM ESEC/FSE 2011)
 # - Modeled loosely on 'git-churn' by Gary Bernhardt:
-#     https://github.com/garybernhardt/dotfiles)
+#     https://github.com/garybernhardt/dotfiles
 # ----
 #
 # Show ownership for whole repo:
